@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Socket.IO chat</title>
+        <style>
+            body {
+                margin: 0;
+                padding-bottom: 3rem;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                    Roboto, Helvetica, Arial, sans-serif;
+            }
+
+            #form {
+                background: rgba(0, 0, 0, 0.15);
+                padding: 0.25rem;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                display: flex;
+                height: 3rem;
+                box-sizing: border-box;
+                backdrop-filter: blur(10px);
+            }
+            #input {
+                border: none;
+                padding: 0 1rem;
+                flex-grow: 1;
+                border-radius: 2rem;
+                margin: 0.25rem;
+            }
+            #input:focus {
+                outline: none;
+            }
+            #form > button {
+                background: #333;
+                border: none;
+                padding: 0 1rem;
+                margin: 0.25rem;
+                border-radius: 3px;
+                outline: none;
+                color: #fff;
+            }
+
+            #messages {
+                list-style-type: none;
+                margin: 0;
+                padding: 0;
+            }
+            #messages > li {
+                padding: 0.5rem 1rem;
+            }
+            #messages > li:nth-child(odd) {
+                background: #efefef;
+            }
+            #overlay {
+                position: fixed;
+                display: block;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 2;
+                cursor: pointer;
+            }
+
+            #text{
+                width: 100%;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                color: white;
+                transform: translate(-50%,-50%);
+                -ms-transform: translate(-50%,-50%);
+                text-align: center;
+            }
+            #text input {
+                width: 70%;
+                font-size: 50px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="overlay">
+            <div id="text">
+                <input type="text" name="nickname" placeholder="type a nickname e press 'enter'" required>
+            </div>
+        </div>
+          
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="input" autocomplete="off" />
+            <button>Send</button>
+        </form>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+
+            const user = {
+                nickname: ''
+            }
+
+            const inputNickname = document.querySelector('input[name="nickname"]');
+            inputNickname.addEventListener('keyup', (e) => {
+                if (inputNickname.value && e.key === 'Enter') {
+                    setNickname()
+                }
+            });
+
+            function setNickname() {
+                document.getElementById("overlay").style.display = "none";
+                user.nickname = inputNickname.value;
+                init();
+            }
+
+
+            const messages = document.getElementById('messages');
+            const form = document.getElementById('form');
+            const input = document.getElementById('input');
+
+            function createMessage (response) {
+                const item = document.createElement('li');
+                item.innerHTML = `<b>${response.nickname}</b>: ${response.message}`;
+                messages.appendChild(item);
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+
+            function init () {
+                const socket = io();
+                            
+                socket.emit('send-nickname', user)
+                socket.on('chat message', createMessage);
+
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const message = input.value;
+                    if (message) {
+                        socket.emit('chat message', {
+                            ...user,
+                            message
+                        });
+                        input.value = '';
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>
